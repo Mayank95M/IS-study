@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Snapshot builder</title>
+<style>
+:root { color-scheme: light; --bg: #f6f5f2; --paper: #fff; --ink: #1d1d1b; --ink-2: #4a4945; --ink-3: #6d6b66; --rule: #e2dfd8; --ok: #1e6b3a; --ok-soft: #e7f3eb; --bad: #8a1c1c; --bad-soft: #fbeaea; --accent: #1f5f8b; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+.lead { color: var(--ink-2); margin: 0 0 18px; max-width: 760px; }
+.card { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; margin: 0 0 16px; }
+.card h2 { font-size: 16px; margin: 0 0 8px; }
+label.f { display: block; font-size: 13px; color: var(--ink-3); margin-bottom: 4px; }
+input[type=text] { width: 100%; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 7px 9px; border: 1px solid #cfcbc2; border-radius: 6px; }
+button, .btn { font: 600 14px/1 system-ui, sans-serif; padding: 9px 14px; border-radius: 8px; border: 1px solid #3a3a37; background: #fff; color: var(--ink); cursor: pointer; text-decoration: none; display: inline-block; }
+button.primary { background: #1d1d1b; color: #fff; }
+button:disabled { opacity: .45; cursor: default; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { border: 1px solid var(--rule); padding: 5px 6px; text-align: left; vertical-align: top; }
+th { background: #faf9f6; font-weight: 600; }
+td.ok { background: var(--ok-soft); color: var(--ok); text-align: center; }
+td.bad { background: var(--bad-soft); color: var(--bad); text-align: center; font-weight: 700; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; word-break: break-all; }
+.status { font-size: 13px; color: var(--ink-2); }
+.err { color: var(--bad); }
+.small { font-size: 12.5px; color: var(--ink-3); }
+.scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Snapshot builder</h1>
+<p class="lead">Copies the six method pages from ReMeDe, splits each into the 18 elements of the information structure, and saves them as <code>methods.js</code>. Publish that file next to <code>index.html</code>: every participant then sees exactly this text, and the snapshot can be archived with the preregistration.</p>
+
+<div class="card">
+  <h2>1. Fetch from ReMeDe</h2>
+  <label class="f" for="base">Address of the folder that holds the method pages</label>
+  <input type="text" id="base" value="https://ytobiafnmagmcesxdwqk.supabase.co/storage/v1/object/public/designmethods/">
+  <div class="scroll" style="margin-top:12px"><table id="files"></table></div>
+  <div class="row" style="margin-top:12px">
+    <button class="primary" id="fetch">Fetch all six</button>
+    <span class="small">or load the HTML files from your computer:</span>
+    <input type="file" id="local" accept=".html,.htm,text/html" multiple>
+  </div>
+  <p class="status" id="fetch-status"></p>
+</div>
+
+<div class="card">
+  <h2>2. Check the elements</h2>
+  <p class="small">Every cell should be green. A red cell means that element was not found on the ReMeDe page; fix the page in ReMeDe (or the heading's spelling) and fetch again, because a missing element would be missing for participants too.</p>
+  <div class="scroll"><table id="cover"></table></div>
+  <p class="status" id="extra"></p>
+</div>
+
+<div class="card">
+  <h2>3. Preview and save</h2>
+  <p class="small">Preview opens the participant page with this snapshot, in this browser only. When every page reads correctly, download <code>methods.js</code> and replace the file in the study's repository.</p>
+  <div class="row" id="previews"></div>
+  <div class="row" style="margin-top:12px"><button class="primary" id="save" disabled>Download methods.js</button><span class="status" id="save-status"></span></div>
+</div>
+</div>
+<script>
+const METHOD_LIST = [{"id": "5whys", "name": "5 Whys", "file": "5 Whys", "position": 1}, {"id": "pugh", "name": "Pugh matrix", "file": "Pugh Matrix Method", "position": 2}, {"id": "hmw", "name": "How Might We", "file": "How Might We", "position": 1}, {"id": "wire", "name": "Wireframing", "file": "Wireframing", "position": 2}, {"id": "rb", "name": "Reverse brainstorming", "file": "Reverse Brainstorming", "position": 1}, {"id": "cw", "name": "Cognitive walkthrough", "file": "Cognitive Walkthrough", "position": 2}];
+const ELEMENTS = ["Objective", "Detailed description", "Steps", "Input", "Output", "Concise example", "Detailed example", "Benefits", "Limitations", "Things to keep in mind", "Required resources", "Design phase", "Suitable domain", "Related methods", "Level of difficulty", "Method-specific skills", "Underlying assumptions", "Literature"];
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const SYN = {
+    'objective': 'Objective', 'objectives': 'Objective', 'purpose': 'Objective',
+    'detailed description': 'Detailed description', 'description': 'Detailed description',
+    'steps': 'Steps', 'procedure': 'Steps', 'input': 'Input', 'inputs': 'Input', 'output': 'Output', 'outputs': 'Output',
+    'concise example': 'Concise example', 'detailed example': 'Detailed example',
+    'benefits': 'Benefits', 'benefit': 'Benefits', 'limitations': 'Limitations', 'limitation': 'Limitations',
+    'things to keep in mind': 'Things to keep in mind', 'required resources': 'Required resources', 'resources': 'Required resources',
+    'design phase': 'Design phase', 'design phases': 'Design phase', 'suitable domain': 'Suitable domain', 'suitable domains': 'Suitable domain',
+    'related method': 'Related methods', 'related methods': 'Related methods',
+    'level of difficulty': 'Level of difficulty', 'difficulty level': 'Level of difficulty',
+    'method specific skill(s)': 'Method-specific skills', 'method specific skills': 'Method-specific skills', 'method-specific skills': 'Method-specific skills',
+    'method specific skill': 'Method-specific skills', 'method-specific skill(s)': 'Method-specific skills',
+    'underlying assumptions': 'Underlying assumptions', 'underlying assumption': 'Underlying assumptions',
+    'literature': 'Literature', 'references': 'Literature',
+  };
+  const norm = t => String(t || '').replace(/ /g, ' ').replace(/[:\s]+$/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const KEEP = new Set(['P', 'UL', 'OL', 'LI', 'B', 'STRONG', 'I', 'EM', 'BR', 'A', 'H3', 'H4', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD', 'IMG', 'SUP', 'SUB', 'U']);
+  const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON', 'LINK', 'META', 'NOSCRIPT', 'SVG']);
+
+  function cleanUrl(u) {
+    try { const x = new URL(u, 'https://example.org/'); if (!/^https?:$/.test(x.protocol) && x.protocol !== 'mailto:') return null;
+      [...x.searchParams.keys()].filter(k => /^utm_/i.test(k)).forEach(k => x.searchParams.delete(k)); return x.toString(); } catch (e) { return null; }
+  }
+  /* Keep only text structure: paragraphs, lists, emphasis, links, tables, images. */
+  function sanitize(node, doc) {
+    const out = doc.createDocumentFragment();
+    node.childNodes.forEach(ch => {
+      if (ch.nodeType === 3) { out.append(doc.createTextNode(ch.nodeValue)); return; }
+      if (ch.nodeType !== 1) return;
+      const tag = ch.tagName.toUpperCase();
+      if (DROP.has(tag)) return;
+      if (tag === 'H1' || tag === 'H2' || tag === 'H5' || tag === 'H6') { const h = doc.createElement('h3'); h.append(sanitize(ch, doc)); if (h.textContent.trim()) out.append(h); return; }
+      if (!KEEP.has(tag)) { out.append(sanitize(ch, doc)); return; }
+      const e = doc.createElement(tag.toLowerCase());
+      if (tag === 'A') { const u = cleanUrl(ch.getAttribute('href') || ''); if (u) { e.setAttribute('href', u); e.setAttribute('target', '_blank'); e.setAttribute('rel', 'noopener'); } }
+      if (tag === 'IMG') { const u = cleanUrl(ch.getAttribute('src') || ''); if (!u || !/^https:/.test(u)) return; e.setAttribute('src', u); e.setAttribute('alt', ch.getAttribute('alt') || ''); }
+      if (tag === 'OL') { ['type', 'start'].forEach(a => { if (ch.getAttribute(a)) e.setAttribute(a, ch.getAttribute(a)); }); }
+      if (tag === 'TD' || tag === 'TH') { ['colspan', 'rowspan'].forEach(a => { if (ch.getAttribute(a)) e.setAttribute(a, ch.getAttribute(a)); }); }
+      e.append(sanitize(ch, doc));
+      if ((tag === 'P' || tag === 'LI') && !e.textContent.trim() && !e.querySelector('img')) return;
+      out.append(e);
+    });
+    return out;
+  }
+  /* Split a ReMeDe method page into elements, following the headings, as ReMeDe's own page does. */
+  function parse(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const sections = {}, extra = [], order = [];
+    let cur = null;
+    const start = name => { cur = name; if (!sections[name]) { sections[name] = doc.createElement('div'); order.push(name); } };
+    Array.from(doc.body.children).forEach(node => {
+      const tag = node.tagName.toUpperCase();
+      const text = node.textContent || '';
+      if (/^H[1-6]$/.test(tag)) {
+        const key = SYN[norm(text)];
+        if (key) { start(key); return; }
+        if (!norm(text)) return;                                   // empty heading, e.g. a stray <h1/>
+        if (!cur) { extra.push(text.trim()); start('__before'); }
+        const h = doc.createElement('h3'); h.textContent = text.replace(/:\s*$/, '').trim(); sections[cur].append(h); return;
+      }
+      // headings written as a bold lead-in: <p><b>Steps:</b> ...</p>
+      const firstReal = Array.from(node.childNodes).find(c => !(c.nodeType === 3 && !c.nodeValue.trim()));
+      const lead = firstReal && firstReal.nodeType === 1 ? firstReal : null;
+      if (tag === 'P' && lead && /^(B|STRONG)$/.test(lead.tagName)) {
+        const key = SYN[norm(lead.textContent)];
+        if (key) { start(key); lead.remove(); if (node.textContent.trim()) sections[cur].append(node.cloneNode(true)); return; }
+      }
+      if (!cur) start('__before');
+      sections[cur].append(node.cloneNode(true));
+    });
+    const elements = {}, missing = [];
+    ELEMENTS.forEach(name => {
+      const box = sections[name];
+      if (!box) { missing.push(name); return; }
+      const clean = document.createElement('div'); clean.append(sanitize(box, document));
+      const htmlOut = clean.innerHTML.replace(/\s+\n/g, '\n').trim();
+      if (!clean.textContent.trim() && !clean.querySelector('img')) { missing.push(name); return; }
+      elements[name] = htmlOut;
+    });
+    order.filter(n => !ELEMENTS.includes(n) && n !== '__before').forEach(n => extra.push(n));
+    return { elements, missing, extra };
+  }
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  const state = {};
+  function drawFiles() {
+    $('#files').innerHTML = '<tr><th>Method</th><th>File name in ReMeDe</th><th>Status</th></tr>' + METHOD_LIST.map(m =>
+      '<tr><td>' + esc(m.name) + '</td><td><input type="text" data-id="' + m.id + '" value="' + esc(m.file) + '.html"></td><td id="st-' + m.id + '" class="status">' +
+      (state[m.id] ? (state[m.id].error ? '<span class="err">' + esc(state[m.id].error) + '</span>' : 'Loaded · ' + (18 - state[m.id].missing.length) + ' of 18 elements') : '—') + '</td></tr>').join('');
+  }
+  function drawCover() {
+    const head = '<tr><th>Method</th>' + ELEMENTS.map((e, i) => '<th title="' + esc(e) + '">' + (i + 1) + '</th>').join('') + '</tr>';
+    const rows = METHOD_LIST.map(m => { const s = state[m.id]; return '<tr><td>' + esc(m.name) + '</td>' + ELEMENTS.map(e => !s || s.error ? '<td></td>' : (s.elements[e] ? '<td class="ok">✓</td>' : '<td class="bad">✗</td>')).join('') + '</tr>'; }).join('');
+    $('#cover').innerHTML = head + rows + '<tr><td colspan="19" class="small">' + ELEMENTS.map((e, i) => (i + 1) + ' ' + esc(e)).join(' · ') + '</td></tr>';
+    const ex = METHOD_LIST.filter(m => state[m.id] && state[m.id].extra && state[m.id].extra.length).map(m => esc(m.name) + ': ' + state[m.id].extra.map(esc).join(', '));
+    $('#extra').innerHTML = ex.length ? 'Headings on the ReMeDe pages that are not one of the 18 elements, kept out of the study pages: ' + ex.join('; ') : '';
+    const ready = METHOD_LIST.every(m => state[m.id] && !state[m.id].error);
+    $('#save').disabled = !ready;
+    $('#previews').innerHTML = ready ? METHOD_LIST.map(m => ['is', 'cv'].map(f => '<a class="btn" target="_blank" href="index.html?m=' + m.id + '&f=' + f + '&g=ds&s=' + m.position + '&preview=local">' + esc(m.name) + ' · ' + f.toUpperCase() + '</a>').join(' ')).join(' ') : '<span class="small">Load all six methods first.</span>';
+    if (ready) { try { localStorage.setItem('is-study-snapshot', JSON.stringify(snapshot())); } catch (e) { } }
+  }
+  function snapshot() {
+    const out = { __meta: { preview: false, snapshotAt: new Date().toISOString(), source: $('#base').value, tool: 'builder.html v1', elements: ELEMENTS } };
+    METHOD_LIST.forEach(m => { const s = state[m.id]; out[m.id] = { name: m.name, file: s.file, sha256: s.sha256, source: s.source, elements: s.elements, missing: s.missing, extra: s.extra }; });
+    return out;
+  }
+  async function take(m, html, source, file) {
+    const r = parse(html);
+    state[m.id] = Object.assign(r, { file, source, sha256: await sha256(html) });
+  }
+  $('#fetch').addEventListener('click', async () => {
+    const base = $('#base').value.replace(/\/?$/, '/');
+    $('#fetch-status').textContent = 'Fetching…';
+    for (const m of METHOD_LIST) {
+      const file = document.querySelector('input[data-id="' + m.id + '"]').value.trim();
+      const url = base + encodeURIComponent(file);
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        await take(m, await res.text(), url, file);
+      } catch (e) { state[m.id] = { error: 'Could not fetch (' + e.message + '). Load the file from your computer instead.' }; }
+      drawFiles(); drawCover();
+    }
+    $('#fetch-status').textContent = METHOD_LIST.every(m => state[m.id] && !state[m.id].error) ? 'All six loaded.' : 'Some pages could not be fetched; see the table.';
+  });
+  $('#local').addEventListener('change', async e => {
+    for (const f of e.target.files) {
+      const m = METHOD_LIST.find(x => (x.file + '.html').toLowerCase() === f.name.toLowerCase() || x.file.toLowerCase() === f.name.replace(/\.html?$/i, '').toLowerCase());
+      if (!m) { $('#fetch-status').textContent = 'Not one of the six methods: ' + f.name; continue; }
+      await take(m, await f.text(), 'local file: ' + f.name, f.name);
+    }
+    drawFiles(); drawCover();
+  });
+  $('#save').addEventListener('click', () => {
+    const js = '/* Snapshot of ReMeDe method pages for the information-structure study. Made by builder.html. */\nwindow.METHODS = ' + JSON.stringify(snapshot(), null, 1) + ';\n';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([js], { type: 'text/javascript' })); a.download = 'methods.js'; a.click();
+    $('#save-status').textContent = 'Saved. Replace methods.js in the repository, then open index.html?review=1 to check every page.';
+  });
+  window.__parse = parse;   // used by the automated tests
+  drawFiles(); drawCover();
+})();
+</script>
+</body>
+</html>

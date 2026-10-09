@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Design method page</title>
+<style>
+/* One fixed light theme for every participant: the stimulus must look the same on every device. */
+:root {
+  color-scheme: light;
+  --bg: #f6f5f2; --paper: #ffffff; --ink: #1d1d1b; --ink-2: #4a4945; --ink-3: #6d6b66;
+  --rule: #e2dfd8; --rule-2: #cfcbc2; --accent: #1f5f8b; --accent-soft: #e8f0f6; --warn: #8a1c1c; --warn-soft: #fbeaea;
+  --radius: 10px; --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--sans); }
+a { color: var(--accent); }
+.banner { background: var(--warn-soft); color: var(--warn); border-bottom: 1px solid #e8c4c4; padding: 10px 16px; font-size: 14px; }
+.banner b { font-weight: 650; }
+header.bar { position: sticky; top: 0; z-index: 5; background: rgba(246,245,242,.96); backdrop-filter: blur(4px); border-bottom: 1px solid var(--rule); }
+.bar-in { max-width: 1240px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kicker { font-size: 13px; color: var(--ink-3); letter-spacing: .02em; }
+.kicker b { color: var(--ink-2); font-weight: 600; }
+.hint { font-size: 13px; color: var(--ink-3); text-align: right; }
+.tabs { display: none; max-width: 1240px; margin: 0 auto; padding: 0 16px 10px; gap: 6px; }
+.tabs button { flex: 1; font: 600 14px/1 var(--sans); padding: 10px 6px; border-radius: 8px; border: 1px solid var(--rule-2); background: var(--paper); color: var(--ink-2); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 64px; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 28px; align-items: start; }
+.pane { min-width: 0; }
+.method { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius); padding: 28px 32px 32px; }
+.method h1 { font-size: 30px; line-height: 1.2; margin: 0 0 4px; letter-spacing: -.01em; }
+.method .sub { color: var(--ink-3); font-size: 14px; margin: 0 0 18px; }
+.method section { border-top: 1px solid var(--rule); padding: 16px 0 4px; }
+.method section:first-of-type { border-top: 0; padding-top: 4px; }
+.method h2 { font-size: 17px; line-height: 1.3; margin: 0 0 6px; color: var(--ink); letter-spacing: .005em; }
+.method h3 { font-size: 15px; margin: 12px 0 4px; color: var(--ink-2); }
+.method p { margin: 0 0 10px; }
+.method ul, .method ol { margin: 0 0 10px; padding-left: 22px; }
+.method li { margin: 0 0 6px; }
+.method img { max-width: 100%; height: auto; border-radius: 6px; }
+.method table { border-collapse: collapse; margin: 6px 0 12px; font-size: 15px; }
+.method td, .method th { border: 1px solid var(--rule-2); padding: 4px 8px; text-align: left; vertical-align: top; }
+.panel { position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow: auto; display: grid; gap: 16px; padding-bottom: 8px; }
+.card { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px 20px; }
+.card h2 { font-size: 16px; margin: 0 0 2px; }
+.card .lead { font-size: 14px; color: var(--ink-3); margin: 0 0 12px; }
+.q { border-top: 1px solid var(--rule); padding: 12px 0 6px; }
+.q:first-of-type { border-top: 0; padding-top: 2px; }
+.q p.stem { margin: 0 0 8px; font-weight: 600; font-size: 15px; line-height: 1.45; }
+.q label { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: start; font-size: 15px; line-height: 1.45; padding: 5px 6px; border-radius: 6px; cursor: pointer; }
+.q label:hover { background: #f3f2ee; }
+.q input { position: absolute; opacity: 0; pointer-events: none; }
+.q .let { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--rule-2); font: 600 12px/1 var(--sans); color: var(--ink-2); margin-top: 1px; }
+.q input:checked + .let { background: var(--accent); border-color: var(--accent); color: #fff; }
+.q input:focus-visible + .let { outline: 2px solid var(--accent); outline-offset: 2px; }
+.summary { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); font-size: 14px; color: var(--ink-2); }
+.summary b { font-weight: 650; color: var(--ink); letter-spacing: .02em; }
+.task p, .task li { font-size: 15px; }
+.task .instr { background: #f3f2ee; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--ink-2); margin: 0 0 12px; }
+.task ol, .task ul { padding-left: 22px; margin: 0 0 10px; }
+.task ol[type="A"] { list-style-type: upper-alpha; }
+.screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 6px 0 4px; }
+.phone { border: 2px solid #3a3a37; border-radius: 16px; padding: 9px 9px 11px; background: #fff; font-size: 12px; line-height: 1.35; min-height: 240px; display: flex; flex-direction: column; gap: 6px; max-width: 260px; }
+.phone .cap { font: 600 11px/1.2 var(--sans); color: var(--ink-3); text-align: center; margin-bottom: 2px; }
+.ph-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+.ph-tabs { display: flex; gap: 4px; }
+.ph-tabs span { flex: 1; text-align: center; border: 1px solid var(--rule-2); border-radius: 5px; padding: 2px 0; font-size: 10.5px; }
+.ph-tabs span.on { background: #3a3a37; color: #fff; border-color: #3a3a37; }
+.ph-row { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--rule); border-radius: 5px; padding: 3px 5px; }
+.ph-plus { border: 1px solid #3a3a37; border-radius: 4px; width: 16px; height: 16px; display: inline-grid; place-items: center; font-weight: 700; line-height: 1; }
+.ph-btn { margin-top: auto; text-align: center; background: #3a3a37; color: #fff; border-radius: 6px; padding: 5px 0; font-weight: 600; }
+.ph-note { color: var(--ink-3); font-style: italic; font-size: 10.5px; }
+.ph-icon { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid #3a3a37; border-radius: 50%; font-size: 9px; }
+.ph-toast { align-self: center; background: #3a3a37; color: #fff; border-radius: 10px; padding: 2px 10px; font-size: 10.5px; }
+.msg { max-width: 760px; margin: 48px auto; background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius); padding: 24px 28px; }
+.msg h1 { font-size: 22px; margin: 0 0 8px; }
+.msg code { background: #f0eee9; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+.msg table { border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+.msg td, .msg th { border: 1px solid var(--rule); padding: 4px 8px; text-align: left; }
+@media (max-width: 1079px) {
+  main { grid-template-columns: minmax(0, 1fr); padding-top: 12px; }
+  .tabs { display: flex; }
+  .panel { position: static; max-height: none; overflow: visible; }
+  .method { padding: 20px 18px 24px; }
+  .method h1 { font-size: 25px; }
+  body[data-tab="method"] .panel, body[data-tab="a"] .pane-method, body[data-tab="b"] .pane-method, body[data-tab="c"] .pane-method { display: none; }
+  body[data-tab="a"] #card-b, body[data-tab="a"] #card-c, body[data-tab="b"] #card-a, body[data-tab="b"] #card-c, body[data-tab="c"] #card-a, body[data-tab="c"] #card-b { display: none; }
+  .hint { display: none; }
+}
+@media print { header.bar, .tabs { display: none; } main { display: block; } .panel { position: static; max-height: none; } }
+</style>
+</head>
+<body data-tab="method">
+<div id="root"></div>
+<script src="methods.js"></script>
+<script>
+/* Study configuration, generated from config.py: questions, tasks and element order. */
+const STUDY = {"methods": [{"id": "5whys", "name": "5 Whys", "phase": "Need identification", "pair": "A", "position": 1}, {"id": "pugh", "name": "Pugh matrix", "phase": "Concept evaluation", "pair": "A", "position": 2}, {"id": "hmw", "name": "How Might We", "phase": "Problem definition", "pair": "B", "position": 1}, {"id": "wire", "name": "Wireframing", "phase": "Prototyping", "pair": "B", "position": 2}, {"id": "rb", "name": "Reverse brainstorming", "phase": "Concept generation", "pair": "C", "position": 1}, {"id": "cw", "name": "Cognitive walkthrough", "phase": "Testing", "pair": "C", "position": 2}], "elements": ["Objective", "Detailed description", "Steps", "Input", "Output", "Concise example", "Detailed example", "Benefits", "Limitations", "Things to keep in mind", "Required resources", "Design phase", "Suitable domain", "Related methods", "Level of difficulty", "Method-specific skills", "Underlying assumptions", "Literature"], "questions": {"5whys": [{"n": 1, "stem": "Which situation is the 5 Whys best suited to?", "options": ["A new problem needs a quick temporary fix before the end of the day", "A team wants to list all the problems users have with a service", "A team must measure how often a problem occurs across its sites", "The same problem keeps coming back despite repeated quick fixes"]}, {"n": 2, "stem": "Before you ask the first ‘Why?’, what does the method say you should do?", "options": ["Brainstorm several possible causes and vote on the likeliest", "Define the problem clearly and gather evidence about it", "Interview the people most affected by the problem at length", "Agree on a corrective action to try while asking ‘Why?’"]}, {"n": 3, "stem": "Each new ‘Why?’ is asked about…", "options": ["the answer given to the previous ‘Why?’", "a different part of the original problem", "the original problem, from another angle", "the most likely solution found so far"]}, {"n": 4, "stem": "Using the 5 Whys on ‘library visitors leave without borrowing’, a student stops at ‘the librarian is slow’ and proposes hiring another librarian. What is the main weakness?", "options": ["They should have asked exactly five ‘Whys’ before stopping", "They should have asked ‘How?’ at each step instead of ‘Why?’", "They should test two different fixes rather than only one", "They may have stopped at a symptom, not the root cause"]}, {"n": 5, "stem": "You are planning a 5 Whys session for a real project. What does the page say it typically needs?", "options": ["1–2 people, for about 2–3 hours", "2–8 people, for about 15–60 minutes", "8–12 people, for about half a day", "3–5 people, for about 1–2 days"]}], "pugh": [{"n": 1, "stem": "When would you use the Pugh matrix?", "options": ["To select among design concepts by comparing them with a reference", "To generate new concepts by combining random features of products", "To estimate the cost of a concept in detail before building it", "To rank users’ needs by how often each one is mentioned in interviews"]}, {"n": 2, "stem": "Which of these comes before you score the concepts?", "options": ["Asking users to rank the concepts in a short survey", "Building a working prototype of each one of the concepts", "Choosing the criteria and a reference (datum) concept", "Estimating the market size for each of the concepts"]}, {"n": 3, "stem": "In the Pugh matrix, each concept is scored on each criterion…", "options": ["on a scale from 1 to 10, judged on its own merits alone", "as better (+1), same (0) or worse (–1) than the reference concept", "as a rank from best to worst among all the concepts compared", "as the percentage of the criterion that the concept meets"]}, {"n": 4, "stem": "A team scores three backpack concepts against a reference, and Concept B comes out narrowly ahead. According to the method, what should the team do before committing?", "options": ["Commit to Concept B straight away, since it has the highest total score", "Add more criteria until one concept wins by a clear margin", "Look for ways to refine or combine the concepts, then score again", "Replace the reference with Concept B and stop the evaluation"]}, {"n": 5, "stem": "According to the page, what does a Pugh matrix evaluation typically involve?", "options": ["5–6 evaluators, up to 3 hours per evaluation cycle", "2–3 evaluators, about 30 minutes per evaluation cycle", "3–4 evaluators, about 1 hour per evaluation cycle", "8–10 evaluators, a full day per evaluation cycle"]}], "hmw": [{"n": 1, "stem": "At which point in a project is How Might We most useful?", "options": ["Before any research, to decide which users the team should interview", "After research, to turn an insight into a starting point for ideas", "After ideas exist, to decide which one to prototype first", "At the end, to check whether users can complete their tasks"]}, {"n": 2, "stem": "You have written your first How Might We question. According to the steps, what comes next?", "options": ["Interview more users to confirm that the question holds", "Rewrite it as a plain statement of the problem first", "Agree on the single best answer to it with the team", "Test whether the question is too broad or too narrow"]}, {"n": 3, "stem": "Once a How Might We question is final, what is it used for?", "options": ["As the headline of the final design brief for the client", "As the prompt that anchors a round of idea generation", "As a survey question to ask users about their needs", "As the main criterion for judging which concept is best"]}, {"n": 4, "stem": "For the insight ‘Commuters want to read on the bus but feel sick when they do’, which How Might We question is best formed?", "options": ["How might we make an e-reader app with a motion-sickness mode?", "How might we improve the experience of travelling by bus?", "How might we help commuters read comfortably on a moving bus?", "How might we stop city buses from swaying on bumpy roads?"]}, {"n": 5, "stem": "What does the page say a How Might We session typically takes?", "options": ["1–5 people, for about 15–45 minutes", "6–10 people, for about 2–3 hours", "1–2 people, for about 5 minutes", "4–8 people, for about a full day"]}], "wire": [{"n": 1, "stem": "What is a wireframe mainly for?", "options": ["Presenting the final look of a product to the client for final sign-off", "Recording how real users move through an existing product", "Planning a product’s structure and navigation before visual design", "Writing the detailed specifications that developers code from"]}, {"n": 2, "stem": "According to the steps, what should you do before sketching the layout?", "options": ["Define the goals and scope, and the users and their journeys", "Choose the colour palette and the fonts for the screens", "Collect screenshots of competitors’ apps to settle on a visual style", "Run a usability test of the current app with ten users"]}, {"n": 3, "stem": "What does a finished wireframe feed into?", "options": ["The brand guidelines that fix the product’s visual style", "The blueprint for UI design and the next prototype", "The final graphic assets that ship with the product", "A usability score for the finished, launched product"]}, {"n": 4, "stem": "A student defines goals and personas, sketches the layout, then immediately refines it to mid-fidelity. Which step did they skip?", "options": ["Reviewing the user flow and navigation", "Defining the project’s goals and scope", "Validating the design with stakeholders", "Preparing the design for prototyping"]}, {"n": 5, "stem": "What does the page say wireframing typically takes?", "options": ["At least 5 people, about 1–2 days per iteration", "Just 1 person, about 10 minutes per iteration", "At least 2 people, about 1–2 hours per iteration", "At least 2 people, about 1–2 weeks per iteration"]}], "rb": [{"n": 1, "stem": "When is Reverse brainstorming especially useful?", "options": ["When the team already has one obvious solution to refine", "When ideas must be scored for feasibility and impact", "When the problem itself has not yet been defined at all", "When normal idea generation has stalled on a problem"]}, {"n": 2, "stem": "What do you do right after defining the problem?", "options": ["Brainstorm direct solutions to the problem as stated", "Collect data on how often, when and where the problem occurs", "Restate it the other way round: how could we make it worse?", "List every group of users affected by the problem"]}, {"n": 3, "stem": "A negative idea for a library is ‘hide the opening hours’. What is its reversal?", "options": ["Close the library at weekends to save on staff costs", "Show the opening hours clearly at the entrance and online", "Ask visitors why they need to know the opening hours", "Keep the hours hidden, but add a staffed help desk"]}, {"n": 4, "stem": "A team reverses its negative ideas into eight positive ones and adopts the first one it wrote. Which step did it skip?", "options": ["Checking each positive idea with a group of users", "Generating more positive ideas than negative ones", "Writing a fresh statement of the original problem", "Evaluating and prioritising the positive ideas"]}, {"n": 5, "stem": "According to the page, how many people does Reverse brainstorming need, and how long does it take?", "options": ["1 person, about 20–40 minutes", "4–6 people, about 20–40 minutes", "1 person, about 2–3 hours in all", "6–10 people, for about one hour"]}], "cw": [{"n": 1, "stem": "What does a Cognitive walkthrough mainly check?", "options": ["Whether an interface meets the accessibility standards", "How quickly expert users can complete routine tasks", "Whether an interface is easy to learn just by exploring it", "How satisfied users are after using the product for a month"]}, {"n": 2, "stem": "What do you prepare before conducting the walkthrough?", "options": ["A group of real users to watch as they work through the prototype", "A heuristic checklist covering the whole interface", "A working, high-fidelity version of the product", "A user profile, a representative task and its action sequence"]}, {"n": 3, "stem": "During the walkthrough, at each action the evaluator asks…", "options": ["whether the screen follows the brand’s visual style guidelines", "whether a new user would know what to do and understand the response", "how long the developers will need to build and test that part of the app", "whether an expert user could complete the action more quickly"]}, {"n": 4, "stem": "An evaluator looks at a library app’s book-renewal screen as a whole and notes that it ‘seems easy enough’. What is the main weakness?", "options": ["The evaluator should have asked several users for opinions", "The screen should first have been built in high fidelity", "The evaluator should have timed how long renewal takes", "The task was not broken into actions, each judged in turn"]}, {"n": 5, "stem": "According to the page, what does a Cognitive walkthrough typically need?", "options": ["2–4 evaluators, about 1–3 hours per task", "5–8 evaluators, about 1–3 days per task", "1 evaluator, about 10 minutes per task", "8–10 evaluators, about 30 minutes per task"]}]}, "inputs": {"5whys": "<p><b>Problem:</b> Many people skip lunch on weekdays.</p><p><b>What a quick observation found:</b></p><ol><li>The queue is longest from 1:00 to 1:15 pm.</li><li>Ordering and paying happen at the same single counter.</li><li>People decide what to eat only when they reach the counter, because the menu board hangs behind it.</li><li>Card payments often need two or three attempts because the network is weak.</li><li>Food is plated only after payment is complete.</li></ol>", "pugh": "<p><b>Three concepts the canteen is considering:</b></p><ol type=\"A\"><li><b>Pre-order app</b> — people order and pay on their phone and collect in a 10-minute pickup slot.</li><li><b>Two counters</b> — one counter only takes orders and payment; a second counter only hands out food.</li><li><b>Staggered breaks</b> — departments take lunch at 1:00, 1:15 or 1:30.</li></ol><p>The current arrangement is one counter for everything and one break time for all.</p>", "hmw": "<p><b>Insight from interviews with office staff:</b> “I want a hot lunch, but I can’t spend 25 minutes of my 45-minute break standing in a queue.” Several staff said they now skip lunch twice a week.</p>", "wire": "<p><b>Screen to wireframe:</b> the main screen of the canteen’s pre-order app. On this one screen a person must be able to choose a dish, pick a 10-minute pickup slot and place the order. The users are staff and students on their phones, often in a hurry.</p>", "rb": "<p><b>Problem:</b> People spend too long getting their lunch at the canteen.</p>", "cw": "<p><b>Prototype:</b> a first version of the canteen’s pre-order app has the three screens below. <b>Task for a first-time user</b>, who has never used the app: order one veg thali for pickup at 1:15 pm.</p><div class=\"screens\"><div class=\"phone\"><div class=\"cap\">Screen 1 · Menu</div><div class=\"ph-top\"><span>CanteenGo</span><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-label=\"search icon\" role=\"img\"><circle cx=\"7\" cy=\"7\" r=\"5\" fill=\"none\" stroke=\"#3a3a37\" stroke-width=\"2\"/><line x1=\"11\" y1=\"11\" x2=\"15\" y2=\"15\" stroke=\"#3a3a37\" stroke-width=\"2\"/></svg></div><div class=\"ph-tabs\"><span class=\"on\">Today</span><span>Combos</span><span>Drinks</span></div><div class=\"ph-row\"><span>Dal · ₹30</span><span class=\"ph-plus\">+</span></div><div class=\"ph-row\"><span>Paneer curry · ₹60</span><span class=\"ph-plus\">+</span></div><div class=\"ph-row\"><span>Rice · ₹20</span><span class=\"ph-plus\">+</span></div><div class=\"ph-row\"><span>Roti · ₹10</span><span class=\"ph-plus\">+</span></div><div class=\"ph-note\">Combos tab (not shown): Veg thali ₹90 · Mini meal ₹70</div><div class=\"ph-btn\">Basket (0)</div></div><div class=\"phone\"><div class=\"cap\">Screen 2 · Basket</div><div class=\"ph-top\"><span>Basket</span><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-label=\"clock icon\" role=\"img\"><circle cx=\"8\" cy=\"8\" r=\"6.5\" fill=\"none\" stroke=\"#3a3a37\" stroke-width=\"1.6\"/><path d=\"M8 4.5V8l2.5 1.5\" fill=\"none\" stroke=\"#3a3a37\" stroke-width=\"1.6\"/></svg></div><div class=\"ph-row\"><span>Veg thali × 1</span><span>₹90</span></div><div>Pickup: ASAP</div><div class=\"ph-note\">Tapping the clock icon opens a list of pickup times.</div><div class=\"ph-btn\">Proceed</div></div><div class=\"phone\"><div class=\"cap\">Screen 3 · Payment</div><div class=\"ph-top\"><span>Pay</span><span></span></div><div class=\"ph-row\"><span>○ UPI</span></div><div class=\"ph-row\"><span>○ Card</span></div><div class=\"ph-btn\">Pay ₹90</div><div class=\"ph-toast\">Done</div><div class=\"ph-note\">After tapping Pay, “Done” appears for two seconds, then the app returns to Screen 1.</div></div></div>"}, "scenario": "<p><b>The campus canteen.</b> About 600 staff and students eat lunch at a campus canteen. The lunch break is 1:00–1:45 pm, and most people arrive at 1:00. Everyone queues at one counter to order and pay, then waits while their food is plated. On weekdays the queue takes about 25 minutes, and many people give up and skip lunch.</p>", "partB": "Apply the method to the input below, the way the method page describes. Write out your working step by step, then your result, in the study tab under Part B. Keep it short: this is a quick, individual version of the method, about 3 minutes. The study tab has no drawing tools, so describe any sketch, table or diagram in words.", "partC": ["Outline a 45-minute class on this method for second-year design students: what they would do, in what order, and for how long.", "Name one mistake students are likely to make with this method, and say how you would check that they used it correctly."]};
+</script>
+<script>
+(function () {
+  'use strict';
+  const root = document.getElementById('root');
+  const q = new URLSearchParams(location.search);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const el = (tag, attrs, html) => { const e = document.createElement(tag); if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]); if (html != null) e.innerHTML = html; return e; };
+
+  function loadSnapshot() {
+    if (q.get('preview') === 'local') {
+      try { const s = localStorage.getItem('is-study-snapshot'); if (s) return JSON.parse(s); } catch (e) { }
+    }
+    return window.METHODS || null;
+  }
+  const SNAP = loadSnapshot();
+
+  function message(title, html) {
+    document.title = title;
+    root.innerHTML = '';
+    root.append(el('div', { class: 'msg' }, '<h1>' + esc(title) + '</h1>' + html));
+  }
+
+  function reviewIndex() {
+    const rows = STUDY.methods.map(m => {
+      const links = ['is', 'cv'].map(f => ['ds', 'dp', 'de'].map(g =>
+        '<a href="?m=' + m.id + '&f=' + f + '&g=' + g + '&s=' + m.position + '">' + f.toUpperCase() + ' · ' + g.toUpperCase() + '</a>').join(' &nbsp; ')).join('<br>');
+      return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.phase) + '</td><td>' + links + '</td></tr>';
+    }).join('');
+    message('Method pages for review', '<p>Every method in both formats, as each group sees it. IS = information-structure page; CV = conventional page.</p><table><tr><th>Method</th><th>Phase</th><th>Pages</th></tr>' + rows + '</table>');
+  }
+
+  if (!STUDY) return message('This page is not set up', '<p>The study configuration is missing.</p>');
+  if (q.get('review') === '1') return reviewIndex();
+
+  const mid = q.get('m'), fmt = q.get('f'), grp = (q.get('g') || 'ds').toLowerCase(), slot = q.get('s');
+  const meta = STUDY.methods.find(x => x.id === mid);
+  if (!meta || !['is', 'cv'].includes(fmt) || !['ds', 'dp', 'de'].includes(grp)) {
+    return message('This link is incomplete', '<p>Please go back to the study tab and open the method page with the button there.</p>');
+  }
+  if (!SNAP || !SNAP[mid] || !SNAP[mid].elements) {
+    return message('Method content is missing', '<p>The file <code>methods.js</code> has no content for this method. Researchers: make a snapshot with <code>builder.html</code>.</p>');
+  }
+  const content = SNAP[mid].elements;
+  const preview = !!(SNAP.__meta && SNAP.__meta.preview) || q.get('preview') === 'local';
+
+  /* ---------- page skeleton ---------- */
+  document.title = meta.name + ' — method page';
+  if (preview) root.append(el('div', { class: 'banner', role: 'note' }, '<b>Preview content.</b> ' + (q.get('preview') === 'local'
+    ? 'Showing the snapshot from builder.html in this browser. Download methods.js there and publish it before collecting data.'
+    : 'This text is paraphrased for layout testing. Replace methods.js with a snapshot from builder.html before collecting data.')));
+  const header = el('header', { class: 'bar' });
+  header.append(el('div', { class: 'bar-in' }, '<div class="kicker"><b>Method ' + (slot === '2' ? '2' : '1') + ' of 2</b> &nbsp;·&nbsp; Read the method, then answer Parts A and B' + (grp === 'de' ? ' and C' : '') + '</div><div class="hint">Enter your answers in the study tab</div>'));
+  const tabs = el('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Sections of this page' });
+  const tabDefs = [['method', 'Method'], ['a', 'Part A'], ['b', 'Part B']].concat(grp === 'de' ? [['c', 'Part C']] : []);
+  tabDefs.forEach(([k, label]) => {
+    const b = el('button', { type: 'button', role: 'tab', 'aria-selected': k === 'method' ? 'true' : 'false', 'data-k': k }, label);
+    b.addEventListener('click', () => { document.body.dataset.tab = k; tabs.querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b ? 'true' : 'false')); window.scrollTo(0, 0); });
+    tabs.append(b);
+  });
+  header.append(tabs);
+  root.append(header);
+  const main = el('main');
+  root.append(main);
+
+  /* ---------- the method, in the assigned format ---------- */
+  const pane = el('div', { class: 'pane pane-method' });
+  const art = el('article', { class: 'method', 'aria-label': 'Method description' });
+  art.append(el('h1', null, esc(meta.name)));
+  art.append(el('p', { class: 'sub' }, 'Design method'));
+  const section = (title, html) => { const s = el('section'); s.append(el('h2', null, esc(title))); s.append(el('div', null, html || '')); art.append(s); };
+  if (fmt === 'is') {
+    STUDY.elements.forEach(name => section(name, content[name] || ''));
+  } else {
+    section('About this method', (content['Objective'] || '') + (content['Detailed description'] || ''));
+    section('Steps', content['Steps'] || '');
+    section('Example', content['Concise example'] || '');
+  }
+  pane.append(art);
+  main.append(pane);
+
+  /* ---------- Parts A, B and C ---------- */
+  const panel = el('aside', { class: 'panel', 'aria-label': 'Questions and task' });
+  const qs = STUDY.questions[mid];
+  const cardA = el('section', { class: 'card', id: 'card-a' });
+  cardA.append(el('h2', null, 'Part A — five questions'));
+  cardA.append(el('p', { class: 'lead' }, 'Use the method page to answer. Choose one letter per question, then enter the letters in the study tab.'));
+  const picked = {};
+  const summary = el('div', { class: 'summary', 'aria-live': 'polite' });
+  const drawSummary = () => { summary.innerHTML = 'Your letters to enter in the study tab: <b>' + qs.map(x => x.n + ' ' + (picked[x.n] || '–')).join('  ·  ') + '</b>'; };
+  qs.forEach(item => {
+    const box = el('div', { class: 'q', role: 'radiogroup', 'aria-labelledby': 'stem-' + item.n });
+    box.append(el('p', { class: 'stem', id: 'stem-' + item.n }, item.n + '. ' + esc(item.stem)));
+    item.options.forEach((opt, i) => {
+      const L = 'ABCD'[i];
+      const lab = el('label');
+      const inp = el('input', { type: 'radio', name: 'q' + item.n, value: L });
+      inp.addEventListener('change', () => { picked[item.n] = L; drawSummary(); });
+      lab.append(inp, el('span', { class: 'let', 'aria-hidden': 'true' }, L), el('span', null, esc(opt)));
+      box.append(lab);
+    });
+    cardA.append(box);
+  });
+  drawSummary();
+  cardA.append(summary);
+  panel.append(cardA);
+
+  const cardB = el('section', { class: 'card task', id: 'card-b' });
+  cardB.append(el('h2', null, 'Part B — try the method'));
+  cardB.append(el('p', { class: 'instr' }, esc(STUDY.partB)));
+  cardB.append(el('div', null, STUDY.scenario));
+  cardB.append(el('div', null, STUDY.inputs[mid]));
+  panel.append(cardB);
+
+  if (grp === 'de') {
+    const cardC = el('section', { class: 'card task', id: 'card-c' });
+    cardC.append(el('h2', null, 'Part C — teaching'));
+    cardC.append(el('p', { class: 'lead' }, 'Answer these in the study tab, for second-year design students.'));
+    cardC.append(el('ol', null, STUDY.partC.map(x => '<li>' + esc(x) + '</li>').join('')));
+    panel.append(cardC);
+  }
+  main.append(panel);
+})();
+</script>
+</body>
+</html>
